@@ -16,7 +16,7 @@ const ai_SPREADSHEET_ID = "1CsBH_ZRhID7ahWMdizVaPN-gfBpUrVtQF409dvR2vgw";
 // 3. スプレッドシートのシート名
 const ai_SHEET_NAME = "シート1";
 // 5. 承認リネーム後のファイル移動先（自動リネームフォルダ）のID
-const ai_AUTO_RENAME_FOLDER_ID = "XXXXXXXXXX_自動リネームフォルダIDをここに設定";
+const ai_AUTO_RENAME_FOLDER_ID = "1vP-Y3TsLFDKbY4K79cks6mJVivnSdR7l";
 
 // 4. スクリプトプロパティ（プロジェクトの設定）に以下を保存
 //    - GEMINI_API_KEY
