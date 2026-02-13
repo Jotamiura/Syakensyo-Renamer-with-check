@@ -15,6 +15,8 @@ const ai_AI_PROCESSING_FOLDER_ID = "1wQNGTkttmTfc1dCDSORNT5B34JYxMquf";
 const ai_SPREADSHEET_ID = "1CsBH_ZRhID7ahWMdizVaPN-gfBpUrVtQF409dvR2vgw";
 // 3. スプレッドシートのシート名
 const ai_SHEET_NAME = "シート1";
+// 5. 承認リネーム後のファイル移動先（自動リネームフォルダ）のID
+const ai_AUTO_RENAME_FOLDER_ID = "1vP-Y3TsLFDKbY4K79cks6mJVivnSdR7l";
 
 // 4. スクリプトプロパティ（プロジェクトの設定）に以下を保存
 //    - GEMINI_API_KEY
@@ -112,7 +114,7 @@ function ai_processApproval(approvalData) {
       originalExtension = file.getName().substring(lastDotIndex);
     }
     
-    const finalNewName = `${newName}${originalExtension}`;
+    const finalNewName = `${newName}[R]${originalExtension}`;
     file.setName(finalNewName);
     
     // スプレッドシートを更新（Sheets APIを使用）
@@ -126,10 +128,13 @@ function ai_processApproval(approvalData) {
     Sheets.Spreadsheets.Values.update({ values: values }, ai_SPREADSHEET_ID, updateRange, { valueInputOption: "RAW" });
     
     console.log(`リネーム成功: ${fileId} -> ${finalNewName}`);
-    
+
+    // 自動リネームフォルダへ移動（自動版との出力先統一）
+    const destFolder = DriveApp.getFolderById(ai_AUTO_RENAME_FOLDER_ID);
+    file.moveTo(destFolder);
+
     // Chatworkに通知
-    const folder = file.getParents().next();
-    ai_postToChatwork(file); // ★★ 修正 ★★ フォルダは渡すが、関数側で使用しない
+    ai_postToChatwork(file);
 
     return "承認・リネームが完了しました。";
 
