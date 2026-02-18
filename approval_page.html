@@ -141,10 +141,10 @@
           })
           .withFailureHandler(error => {
             console.error('承認エラー:', error);
-            showToast(`エラー: ${error.message}`);
-            // ボタンを元に戻す
+            showToast(`エラー: ${error.message || error}`);
+            // ボタンを元に戻して再試行可能にする
             button.disabled = false;
-            button.innerHTML = '✅ 承認する';
+            button.innerHTML = '\u2705 承認する';
           })
           .ai_processApproval(approvalData);
       }
