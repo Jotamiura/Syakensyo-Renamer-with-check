@@ -95,7 +95,7 @@ function ai_getApprovalItems() {
  */
 function ai_processApproval(approvalData) {
   const { row, newName } = approvalData;
-  
+
   try {
     // スプレッドシートから該当行のデータを取得（Sheets APIを使用）
     const getRange = `${ai_SHEET_NAME}!D${row}`; // ファイルID（D列）のみ取得
@@ -104,20 +104,34 @@ function ai_processApproval(approvalData) {
       throw new Error("スプレッドシートから対象の行データが見つかりません。");
     }
     const fileId = dataRow[0][0];
-    
+
     // Drive APIでファイル操作
     const file = DriveApp.getFileById(fileId);
-    
+
     let originalExtension = '';
     const lastDotIndex = file.getName().lastIndexOf('.');
     if (lastDotIndex > 0 && lastDotIndex < file.getName().length - 1) {
       originalExtension = file.getName().substring(lastDotIndex);
     }
-    
+
     const finalNewName = `${newName}[R]${originalExtension}`;
     file.setName(finalNewName);
-    
-    // スプレッドシートを更新（Sheets APIを使用）
+
+    console.log(`リネーム成功: ${fileId} -> ${finalNewName}`);
+
+    // 自動リネームフォルダへ移動（Drive Advanced Service v3を使用、共有ドライブ対応）
+    // ※ DriveApp.moveTo() は共有ドライブで正常に動作しないため、Drive API v3 を使用
+    const driveFile = Drive.Files.get(fileId, { supportsAllDrives: true, fields: "parents" });
+    const previousParents = driveFile.parents ? driveFile.parents.join(",") : "";
+    Drive.Files.update({}, fileId, null, {
+      addParents: ai_AUTO_RENAME_FOLDER_ID,
+      removeParents: previousParents,
+      supportsAllDrives: true
+    });
+
+    console.log(`ファイル移動成功: ${fileId} -> フォルダ ${ai_AUTO_RENAME_FOLDER_ID}`);
+
+    // ファイル移動完了後にスプレッドシートを更新（Sheets APIを使用）
     const updateRange = `${ai_SHEET_NAME}!C${row}:F${row}`; // C列（推奨名）からF列（ステータス）を更新
     const values = [[
       newName, // C列: 修正された可能性のある名前で更新
@@ -126,12 +140,6 @@ function ai_processApproval(approvalData) {
       "処理完了" // F列: ステータス
     ]];
     Sheets.Spreadsheets.Values.update({ values: values }, ai_SPREADSHEET_ID, updateRange, { valueInputOption: "RAW" });
-    
-    console.log(`リネーム成功: ${fileId} -> ${finalNewName}`);
-
-    // 自動リネームフォルダへ移動（自動版との出力先統一）
-    const destFolder = DriveApp.getFolderById(ai_AUTO_RENAME_FOLDER_ID);
-    file.moveTo(destFolder);
 
     // Chatworkに通知
     ai_postToChatwork(file);
@@ -140,12 +148,16 @@ function ai_processApproval(approvalData) {
 
   } catch (e) {
     // エラー発生時にステータスを更新
-    const updateRange = `${ai_SHEET_NAME}!F${row}`; // F列（ステータス）のみ更新
-    const values = [["エラー発生"]];
-    Sheets.Spreadsheets.Values.update({ values: values }, ai_SPREADSHEET_ID, updateRange, { valueInputOption: "RAW" });
-    
+    try {
+      const updateRange = `${ai_SHEET_NAME}!F${row}`; // F列（ステータス）のみ更新
+      const values = [["エラー発生"]];
+      Sheets.Spreadsheets.Values.update({ values: values }, ai_SPREADSHEET_ID, updateRange, { valueInputOption: "RAW" });
+    } catch (sheetError) {
+      console.error(`ステータス更新も失敗: ${sheetError.toString()}`);
+    }
+
     console.error(`リネーム失敗: ${e.toString()}`);
-    return `エラーが発生しました: ${e.message}`;
+    throw new Error(`承認処理に失敗しました: ${e.message}`);
   }
 }
 
