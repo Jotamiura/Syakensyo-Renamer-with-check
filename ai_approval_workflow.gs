@@ -26,7 +26,7 @@ const ai_AUTO_RENAME_FOLDER_ID = "1vP-Y3TsLFDKbY4K79cks6mJVivnSdR7l";
 // ▲▲▲ 設定項目 ▲▲▲
 
 // Gemini APIのエンドポイントURL
-const ai_GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=";
+const ai_GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=";
 
 
 // --- Webアプリのメインエントリポイント ---
